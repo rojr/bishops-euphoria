@@ -1,114 +1,79 @@
-var FFTSIZE = 1024;      // number of samples for the analyser node FFT, min 32
-var TICK_FREQ = 20;     // how often to run the tick function, in milliseconds
-var assetsPath = "./"; // Create a single item to load.
-var src = "";  // set up our source
-var soundInstance;      // the sound instance we create
-var analyserNode;       // the analyser node that allows us to visualize the audio
-var freqFloatData, freqByteData, timeByteData;  // arrays to retrieve data from analyserNode
-var canvas = document.getElementById( "barCanvas" );
-var ctx = canvas.getContext( "2d" );
-var volume = 1;
-canvas.style.width = "100%";
-canvas.style.height = "100%";
-canvas.width  = canvas.offsetWidth;
-canvas.height = canvas.offsetHeight;
-
-var self = this;
-var loaded = false;
-
-function init( song ) {
-
-    if( song != "" )
-    {
-        if( assetsPath + src == assetsPath + song)
-        {
-            handleLoad(this);
-            return;
-        }
-        else
-        {
-            src = song;
-        }
-    }
-    if (window.top != window) {
-        document.getElementById("header").style.display = "none";
+$(function () {
+    // Future-proofing...
+    var context;
+    if (typeof AudioContext !== "undefined") {
+        context = new AudioContext();
+    } else if (typeof webkitAudioContext !== "undefined") {
+        context = new webkitAudioContext();
+    } else {
+        $(".hideIfNoApi").hide();
+        $(".showIfNoApi").show();
+        return;
     }
 
-    // Web Audio only demo, so we register just the WebAudioPlugin and if that fails, display fail message
-    if (!createjs.Sound.registerPlugins([createjs.WebAudioPlugin])) {
-        document.getElementById("error").style.display = "block";
-        //return;
+    // Overkill - if we've got Web Audio API, surely we've got requestAnimationFrame. Surely?...
+    // requestAnimationFrame polyfill by Erik M�ller
+    // fixes from Paul Irish and Tino Zijdel
+    // http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+    // http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
+    var lastTime = 0;
+    var vendors = ['ms', 'moz', 'webkit', 'o'];
+    for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
+        window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
+        window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame']
+            || window[vendors[x] + 'CancelRequestAnimationFrame'];
     }
 
-    // create a new stage and point it at our canvas:
-    createjs.Sound.addEventListener("fileload", createjs.proxy(handleLoad,this)); // add an event listener for when load is completed
-    createjs.Sound.registerSound(assetsPath + src);  // register sound, which preloads by default
+    if (!window.requestAnimationFrame)
+        window.requestAnimationFrame = function (callback, element) {
+            var currTime = new Date().getTime();
+            var timeToCall = Math.max(0, 16 - (currTime - lastTime));
+            var id = window.setTimeout(function () { callback(currTime + timeToCall); },
+                0);
+            lastTime = currTime;
+            return id;
+        };
 
-}
+    if (!window.cancelAnimationFrame)
+        window.cancelAnimationFrame = function (id) {
+            clearTimeout(id);
+        };
 
-function handleLoad(evt) {
-    var context = createjs.Sound.activePlugin.context;
-    analyserNode = context.createAnalyser();
-    analyserNode.fftSize = FFTSIZE;  //The size of the FFT used for frequency-domain analysis. This must be a power of two
-    analyserNode.smoothingTimeConstant = 0.85;  //A value from 0 -> 1 where 0 represents no time averaging with the last analysis frame
-    analyserNode.connect(context.destination);  // connect to the context.destination, which outputs the audio
-    var dynamicsNode = createjs.Sound.activePlugin.dynamicsCompressorNode;
-    dynamicsNode.disconnect();  // disconnect from destination
-    dynamicsNode.connect(analyserNode);
-    freqFloatData = new Float32Array(analyserNode.frequencyBinCount);
-    freqByteData = new Uint8Array(analyserNode.frequencyBinCount);
-    timeByteData = new Uint8Array(analyserNode.frequencyBinCount);
-    startPlayback(evt);
-}
-
-function startPlayback(evt) {
-    soundInstance = createjs.Sound.play(assetsPath + src, {loop:0});
-    soundInstance.addEventListener( "complete" , createjs.proxy('./bishop.m4a', this));
-    soundInstance.volume = volume;
-    // start the tick and point it at the window so we can do some work before updating the stage:
-    createjs.Ticker.addEventListener("tick", tick);
-    createjs.Ticker.setInterval(TICK_FREQ);
-}
-
-function next( song )
-{
-    if( src != "" )
-    {
-        createjs.Ticker.removeEventListener( "tick", tick );
-        createjs.Sound.stop( );
-        createjs.Sound.removeAllEventListeners( );
-        createjs.Sound.activePlugin.dynamicsCompressorNode.disconnect( );
+    // Create the analyser
+    var analyser = context.createAnalyser();
+    analyser.fftSize = 2048;
+    var frequencyData = new Uint8Array(analyser.frequencyBinCount);
+    var visualisation = $("#visualisation");
+    var barSpacingPercent = 100 / analyser.frequencyBinCount;
+    for (var i = 0; i < analyser.frequencyBinCount; i++) {
+        $("<div/>").css("left", i + "px")
+            .appendTo(visualisation);
     }
-    init( song );
-}
+    var bars = $("#visualisation > div");
 
-function tick(evt) {
-    if (!loaded) {
-        $('.placeholder-title').hide();
-        $('.title').show();
-        loaded = true;
-    }
-    analyserNode.getFloatFrequencyData(freqFloatData);  // this gives us the dBs
-    analyserNode.getByteFrequencyData(freqByteData);  // this gives us the frequency
-    analyserNode.getByteTimeDomainData(timeByteData);  // this gives us the waveform
-    //ctx.clearRect(0,0,canvas.width,canvas.height);
-    canvas.width = canvas.width;
-    ctx.fillStyle = "#ffe900";
-    var width = Math.ceil(canvas.width / freqByteData.length);
-    var lastX = 0;
-    var lastY = 0;
-    for( var i = 0; i < freqByteData.length; i++)
-    {
-        ctx.beginPath();
-        ctx.strokeStyle =  "#67C5C2";
-        ctx.moveTo( lastX, lastY);
-        lastY = canvas.height - timeByteData[i] * 2;
-        lastX = i * width;
-        ctx.stroke();
-        ctx.fillRect( i * width, 0, width, freqByteData[i] * 2);
-    }
-}
+    // Get the frequency data and update the visualisation
+    function update() {
+        //requestAnimationFrame(update);
 
-$(document).ready(function() {
-    next('./bishop.m4a');
+        //getByteTimeDomainData
+        analyser.getByteFrequencyData(frequencyData);
+
+        bars.each(function (index, bar) {
+            bar.style.height = frequencyData[index] + 'px';
+        });
+    };
+
+    // Hook up the audio routing...
+    // player -> analyser -> speakers
+    // (Do this after the player is ready to play - https://code.google.com/p/chromium/issues/detail?id=112368#c4)
+    $("#player").bind('canplay', function() {
+        var source = context.createMediaElementSource(this);
+        source.connect(analyser);
+        analyser.connect(context.destination);
+    });
+
+    // Kick it off...
+    setInterval(function(){
+        update();
+    }, 5);
 });

@@ -31,6 +31,7 @@ h1 > span:hover {
     position: absolute;
     right:0;
     top:12vw;
+    list-style-type:none;
 }
 
 .c-song-outer {

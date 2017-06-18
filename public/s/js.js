@@ -3,9 +3,16 @@ $(function () {
     var context;
     var canvas = $('#visualisation');
     var ctx = canvas.get(0).getContext('2d');
-    var width = 1000;
-    var height = 1000;
-    var barCount = 2048;
+    var width = 700;
+    var height = 700;
+    var barCount = 1024;
+
+    $('.js-song-superouter').click(function() {
+        var audio = $('#player').get(0);
+        var current = $(this);
+        audio.src = current.data('src');
+        audio.play();
+    });
 
     if (typeof AudioContext !== "undefined") {
         context = new AudioContext();
@@ -56,16 +63,23 @@ $(function () {
         ctx.clearRect(0, 0, width, height);
 
         //getByteTimeDomainData
-        analyser.getByteFrequencyData(frequencyData);
+        analyser.getByteTimeDomainData(frequencyData);
 
         ctx.strokeStyle = '#ffffff';
+        var first = null;
         ctx.beginPath();
         for (var i = 0; i < barCount; i++) {
+            if (first == null) {
+                first = frequencyData[i];
+            }
             ctx.save();
-            ctx.translate( width / 2, height / 2);
-            ctx.rotate((141 * (i/barCount)) * (Math.PI));
-            ctx.lineTo(i, frequencyData[i]);
-            ctx.translate(-(width/2), -(height / 2));
+            ctx.translate(300, 300);
+            ctx.rotate((360*i / barCount) * (Math.PI/90));
+            ctx.lineTo(frequencyData[i], 0);
+            if (i == barCount - 1) {
+                ctx.lineTo(first, 0);
+            }
+            ctx.translate(300, 300);
             ctx.restore();
         }
         ctx.stroke();

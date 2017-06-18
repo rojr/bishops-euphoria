@@ -1,26 +1,5 @@
 body {
-	background: -webkit-linear-gradient(to right bottom, #FAD0D2, #C0E7FA);  /* Chrome 10-25, Safari 5.1-6 */
-	background: linear-gradient(to right bottom, #FAD0D2, #C0E7FA); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
-	padding:0px;
-	margin:0px;
-}
-h1 {
-	font-family:'Quicksand', 'sans-serif';
-	text-shadow: 2px 2px #FFAAAF;
-	font-size:13vw;
-	color:white;
-	max-width:100%;
-	text-align:center;
-	padding-top:24px;
-}
-
-#visualisation > div {
-	background-color:black;
-	width:0.5px;
-	position:absolute;
-}
-
-#visualisation {
-	height:400px;
-	position:relative;
+    background-color: #121212;
+    padding:0px;
+    margin:0px;
 }

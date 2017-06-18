@@ -1,6 +1,12 @@
 $(function () {
     // Future-proofing...
     var context;
+    var canvas = $('#visualisation');
+    var ctx = canvas.get(0).getContext('2d');
+    var width = 1000;
+    var height = 1000;
+    var barCount = 2048;
+
     if (typeof AudioContext !== "undefined") {
         context = new AudioContext();
     } else if (typeof webkitAudioContext !== "undefined") {
@@ -41,27 +47,29 @@ $(function () {
 
     // Create the analyser
     var analyser = context.createAnalyser();
-    analyser.fftSize = 2048;
+    analyser.fftSize = barCount;
+
     var frequencyData = new Uint8Array(analyser.frequencyBinCount);
-    var visualisation = $("#visualisation");
-    var barSpacingPercent = 100 / analyser.frequencyBinCount;
-    for (var i = 0; i < analyser.frequencyBinCount; i++) {
-        $("<div/>").css("left", i + "px")
-            .appendTo(visualisation);
-    }
-    var bars = $("#visualisation > div");
 
     // Get the frequency data and update the visualisation
     function update() {
-        //requestAnimationFrame(update);
+        ctx.clearRect(0, 0, width, height);
 
         //getByteTimeDomainData
         analyser.getByteFrequencyData(frequencyData);
 
-        bars.each(function (index, bar) {
-            bar.style.height = frequencyData[index] + 'px';
-        });
-    };
+        ctx.strokeStyle = '#ffffff';
+        ctx.beginPath();
+        for (var i = 0; i < barCount; i++) {
+            ctx.save();
+            ctx.translate( width / 2, height / 2);
+            ctx.rotate((141 * (i/barCount)) * (Math.PI));
+            ctx.lineTo(i, frequencyData[i]);
+            ctx.translate(-(width/2), -(height / 2));
+            ctx.restore();
+        }
+        ctx.stroke();
+    }
 
     // Hook up the audio routing...
     // player -> analyser -> speakers

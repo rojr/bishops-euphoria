@@ -1,5 +1,6 @@
 <?php
 $songs = [
+    'anvil.mp3',
     'ba$ement_dweller - dissolved in a bathtub of memes.aac',
     'ba$ement_dweller - when does the ride end.aac',
     'ba$ement dweller - butt chugging cough syrup.aac',
@@ -19,15 +20,16 @@ $songs = [
     <title id="title">Bi$op i$ G0d</title>
 </head>
 <body>
-<audio autoplay controls id="player">
-    <?php
-    foreach ($songs as $song) {
-        print '<source src="/' . $song . '">';
-    }
-    ?>
+<audio id="player" autoplay>
+<?php
+foreach ($songs as $song) {
+    print '<source src="/' . $song . '">';
+}
+
+?>
 </audio>
-<div id="visualisation">
-</div>
+<canvas id="visualisation" width="1000" height="1000">
+</canvas>
 <script type="text/javascript" src="./s/js.js"></script>
 </body>
 </html>

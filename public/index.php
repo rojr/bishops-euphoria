@@ -21,6 +21,7 @@ $songs = [
 <body>
 <audio id="player" src="bishop.aac" autoplay>
 </audio>
+<h1><?php foreach (str_split('Ba$ement Dweller') as $letter) { print '<span>' . $letter . '</span>'; } ?></h1>
 <canvas id="visualisation" width="700" height="700">
 </canvas>
 <ul class="c-song-list">
